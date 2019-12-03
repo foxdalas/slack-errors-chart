@@ -66,7 +66,7 @@ func GetErrors(ctx context.Context, elasticClient *elastic.Client) (Stats, error
 	yesterday := time.Now().AddDate(0, 0, -1).Format(layoutISO)
 	weekAgo := time.Now().AddDate(0, 0, -7).Format(layoutISO)
 
-	errQuery := elastic.NewRangeQuery("status").From(499).To(599)
+	errQuery := elastic.NewRangeQuery("status").From(500).To(599)
 	subAgg := elastic.NewTermsAggregation().Field("request.keyword").Size(1000)
 	dev := elastic.NewTermQuery("region", "dev")
 

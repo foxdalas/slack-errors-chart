@@ -43,7 +43,7 @@ func main () {
 		if id >= 9 {
 			continue
 		}
-		kibanaUrl := fmt.Sprint(os.Getenv("KIBANA")+"/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'"+yesterday+"T00:00:00.000Z',to:'"+yesterday+"T23:59:59.000Z'))&_a=(columns:!(vhost,request,status),interval:auto,query:(language:kuery,query:'ingress_name:%20"+ing.Ingress+"%20AND%20status%20%3E%20499%20AND%20NOT%20region:%20dev'),sort:!(!('@timestamp',desc)))")
+		kibanaUrl := fmt.Sprint(os.Getenv("KIBANA")+"/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'"+yesterday+"T00:00:00.000Z',to:'"+yesterday+"T23:59:59.000Z'))&_a=(columns:!(vhost,request,status),interval:auto,query:(language:kuery,query:'ingress_name:%20\""+ing.Ingress+"\"%20AND%20status%20%3E%20499%20AND%20NOT%20region:%20\"dev\"'),sort:!(!('@timestamp',desc)))")
 		head += fmt.Sprintf("*%s* ошибок <%s|*%d*>\n", ing.Ingress,kibanaUrl, ing.Errors)
 	}
 
