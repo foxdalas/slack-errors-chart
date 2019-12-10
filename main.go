@@ -10,13 +10,13 @@ import (
 	"time"
 )
 
-func main () {
+func main() {
 	client, err := elastic.New(strings.Split(os.Getenv("ELASTICSEARCH"), ","))
-    if err != nil {
-    	log.Fatal(err)
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	data, err := elastic.GetErrors(client.Ctx, client.Client)
+	data, err := client.GetErrors(client.Ctx, client.Client)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -24,7 +24,7 @@ func main () {
 	layoutISO := "2006-01-02"
 
 	head := fmt.Sprintf("Вчера *%s* было запросов\n*%d* всего\n", time.Now().AddDate(0, 0, -1).Format(layoutISO), data.Total)
-	head += fmt.Sprintf("*%d* ошибок *(%.2f%%)*\n\n", data.Errors,data.ErrorsPercent)
+	head += fmt.Sprintf("*%d* ошибок *(%.2f%%)*\n\n", data.Errors, data.ErrorsPercent)
 	head += fmt.Sprint("Топ 10 команд за вчера\n")
 
 	for id, ns := range data.Namespaces {
@@ -32,7 +32,7 @@ func main () {
 			continue
 		}
 		weekAgo := ((float64(ns.Count) - float64(ns.WeekAgoCount)) / float64(ns.WeekAgoCount)) * 100
-		head += fmt.Sprintf("*%s* *%d* ошибок *(%.2f%%)* %d неделю назад\n", ns.Namespace, ns.Count,weekAgo,ns.WeekAgoCount)
+		head += fmt.Sprintf("*%s* *%d* ошибок *(%.2f%%)* %d неделю назад\n", ns.Namespace, ns.Count, weekAgo, ns.WeekAgoCount)
 	}
 
 	yesterday := time.Now().AddDate(0, 0, -1).Format("2006-01-02")
@@ -43,8 +43,8 @@ func main () {
 		if id >= 9 {
 			continue
 		}
-		kibanaUrl := fmt.Sprint(os.Getenv("KIBANA")+"/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'"+yesterday+"T00:00:00.000Z',to:'"+yesterday+"T23:59:59.000Z'))&_a=(columns:!(vhost,request,status),interval:auto,query:(language:kuery,query:'ingress_name:%20\""+ing.Ingress+"\"%20AND%20status%20%3E%20499%20AND%20NOT%20region:%20\"dev\"'),sort:!(!('@timestamp',desc)))")
-		head += fmt.Sprintf("*%s* ошибок <%s|*%d*>\n", ing.Ingress,kibanaUrl, ing.Errors)
+		kibanaUrl := fmt.Sprint(os.Getenv("KIBANA") + "/app/kibana#/discover?_g=(refreshInterval:(pause:!t,value:0),time:(from:'" + yesterday + "T00:00:00.000Z',to:'" + yesterday + "T23:59:59.000Z'))&_a=(columns:!(vhost,request,status),interval:auto,query:(language:kuery,query:'ingress_name:%20\"" + ing.Ingress + "\"%20AND%20status%20%3E%20499%20AND%20NOT%20region:%20\"dev\"'),sort:!(!('@timestamp',desc)))")
+		head += fmt.Sprintf("*%s* ошибок <%s|*%d*>\n", ing.Ingress, kibanaUrl, ing.Errors)
 	}
 
 	var message []string
@@ -54,10 +54,10 @@ func main () {
 	}
 
 	webhookUrl := os.Getenv("SLACK")
-	payload := slack.Payload {
-		Text: head,
+	payload := slack.Payload{
+		Text:     head,
 		Username: "Максим",
-		Channel: "#dops-public",
+		Channel:  "#dops-public",
 	}
 	er := slack.Send(webhookUrl, "", payload)
 	if len(er) > 0 {

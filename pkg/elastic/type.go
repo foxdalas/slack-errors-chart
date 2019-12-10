@@ -6,8 +6,7 @@ import (
 )
 
 type elasticSearch struct {
-	Ctx context.Context
-
+	Ctx    context.Context
 	Client *elastic.Client
 	index  string
 }
