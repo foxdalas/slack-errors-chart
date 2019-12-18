@@ -57,7 +57,7 @@ func main() {
 	payload := slack.Payload{
 		Text:     head,
 		Username: "Максим",
-		Channel:  "#dops-public",
+		Channel:  "@dops-public",
 	}
 	er := slack.Send(webhookUrl, "", payload)
 	if len(er) > 0 {

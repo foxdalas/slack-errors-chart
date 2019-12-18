@@ -3,6 +3,7 @@ package elastic
 import (
 	"context"
 	"errors"
+	"fmt"
 	elastic "github.com/olivere/elastic/v7"
 	"net/http"
 	"syscall"
@@ -110,11 +111,10 @@ func (e *elasticSearch) GetErrors(ctx context.Context, elasticClient *elastic.Cl
 	weekAgo := time.Now().AddDate(0, 0, -7).Format(layoutISO)
 
 	errQuery := elastic.NewRangeQuery("status").From(500).To(599)
-	subAgg := elastic.NewTermsAggregation().Field("request.keyword").Size(1000)
 	dev := elastic.NewTermQuery("region", "dev")
 
 	aggregationName := "vhost"
-	aggr := elastic.NewTermsAggregation().Field("ingress_name.keyword").SubAggregation("by_request", subAgg).Size(1000)
+	aggr := elastic.NewTermsAggregation().Field("ingress_name.keyword").Size(1000)
 
 	aggrigationNamespace := "namespace"
 	aggerNamespace := elastic.NewTermsAggregation().Field("namespace.keyword")
@@ -126,10 +126,20 @@ func (e *elasticSearch) GetErrors(ctx context.Context, elasticClient *elastic.Cl
 	if err != nil {
 		return stats, err
 	}
-	weekAgoSearchResult, err := e.searchResults(generalQ, aggr, aggregationName, weekAgo)
+	weekAgoSearchResult, err := e.searchResults(generalQ, aggerNamespace, aggrigationNamespace, weekAgo)
 	if err != nil {
 		return stats, err
 	}
+
+	namespacesWeekAgo := make(map[string]int64)
+	namespace, found := weekAgoSearchResult.Aggregations.Terms("namespace")
+	fmt.Print(found)
+	if found {
+		for _, n := range namespace.Buckets {
+			namespacesWeekAgo[n.Key.(string)] = n.DocCount
+		}
+	}
+
 
 	stats = e.vhostAggregation(searchResult, stats)
 
@@ -147,20 +157,18 @@ func (e *elasticSearch) GetErrors(ctx context.Context, elasticClient *elastic.Cl
 	stats.Errors = errors
 	stats.ErrorsPercent = (float64(errors) / float64(count)) * 100
 
-	namespaces := e.namespaceCount(weekAgoSearchResult)
-
 	searchResult, err = e.searchResults(generalQ, aggerNamespace, aggrigationNamespace, yesterday)
 	if err != nil {
 		return stats, err
 	}
 
-	namespace, found := searchResult.Aggregations.Terms("namespace")
+	namespace, found = searchResult.Aggregations.Terms("namespace")
 	if found {
 		for _, n := range namespace.Buckets {
 			ns := &Namespace{
 				n.Key.(string),
 				n.DocCount,
-				namespaces[n.Key.(string)],
+				namespacesWeekAgo[n.Key.(string)],
 			}
 			stats.Namespaces = append(stats.Namespaces, ns)
 		}
